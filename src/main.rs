@@ -1,119 +1,21 @@
+mod add_todo;
+mod delete_todo;
+mod done_todo;
+mod list_todo;
+
+use add_todo::add_todo;
+use delete_todo::delete_todo;
+use done_todo::done_todo;
+use list_todo::list_todo;
+
 use clap::{value_parser, Arg, Command};
-use colored::Colorize;
-use rusqlite::{Connection, Result};
-use std::error::Error;
+use rusqlite::Connection;
 
 #[derive(Debug, Clone)]
 struct Todo {
     id: i64,
     task: String,
     done: String,
-}
-
-fn add_todo(conn: &Connection, task: String) -> Result<(), Box<dyn Error>> {
-    let mut stmt = conn.prepare("SELECT id, task, done FROM todos")?;
-    let todo_vec = stmt.query_map([], |row| {
-        Ok(Todo {
-            id: row.get(0)?,
-            task: row.get(1)?,
-            done: row.get(2)?,
-        })
-    })?;
-    
-    let next_id = todo_vec.count() + 1;
-
-    let new_todo = Todo {
-        id: next_id as i64,
-        task: task,
-        done: "false".to_string(),
-    };
-
-    conn.execute (
-        "INSERT INTO todos (task, done) VALUES (?1, ?2)",
-        (&new_todo.task, &new_todo.done),
-    )?;
-    
-    list_todo(conn)?;
-    Ok(())
-}
-
-fn delete_todo(conn: &Connection, ids: Vec<usize>) -> Result<(), Box<dyn Error>> {
-    let mut stmt = conn.prepare("SELECT * FROM todos")?;
-
-    let mut rows = stmt.query([])?;
-    let mut todos_rows = Vec::new();
-    while let Some(row) = rows.next()? {
-        todos_rows.push(Todo {
-            id: row.get(0)?,
-            task: row.get(1)?,
-            done: row.get(2)?,
-        })
-    }
-
-    conn.execute("DELETE FROM todos", ())?;
-
-    for row in todos_rows {
-        if !ids.contains(&(row.id as usize)) {
-            conn.execute("INSERT INTO todos (task, done) VALUES (?1, ?2)", 
-            (&row.task, &row.done)
-            )?;
-        } else {
-            continue;
-        }
-    };
-
-    list_todo(conn)?;
-    Ok(())
-}
-
-fn done_todo(conn: &Connection, id: usize) -> Result<(), Box<dyn Error>> {
-    let done_command_str = format!("UPDATE todos SET done='true' WHERE id={}", id);
-    conn.execute(&done_command_str, ())?;
-
-    list_todo(conn)?;
-    Ok(())
-}
-
-fn list_todo(conn: &Connection) -> Result<(), Box<dyn Error>> {
-    let mut stmt = conn.prepare("SELECT id, task, done FROM todos")?;
-    let todo_iter = stmt.query_map([], |row| {
-        Ok(Todo {
-            id: row.get(0)?,
-            task: row.get(1)?,
-            done: row.get(2)?,
-
-        })
-    })?;
-
-    let no_todos_message  = 
-    r#"     _________________________________________ 
-    / You've got no todos, maybe it's time to \
-    \ relax ;)                                /
-     ----------------------------------------- 
-            \   ^__^
-             \  (oo)\_______
-                (__)\       )\/\
-                    ||----w |
-                    ||     ||"#;
-
-    let todo_iter_vec = todo_iter.into_iter().map(|v| v).collect::<Vec<_>>();
-
-    for todo in &todo_iter_vec {
-        let id = todo.as_ref().unwrap().id;
-        let task = todo.as_ref().unwrap().task.trim_end().to_string();
-        let done = todo.as_ref().unwrap().done.to_string();
-
-        if done == "true" {
-            println!("{}. {}", id, task.blue().bold().strikethrough());
-        } else {
-            println!("{}. {}", id, task);
-        }
-    }
-
-    if todo_iter_vec.len() == 0 as usize {
-        println!("{}", no_todos_message.green().bold());
-    }
-    Ok(())
 }
 
 fn main() {
