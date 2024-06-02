@@ -1,1 +1,1 @@
-/home/griffins/rust/todo-sqlite/target/debug/todo-sqlite: /home/griffins/rust/todo-sqlite/src/main.rs
+/home/griffins/rust/todo-sqlite/target/debug/todo-sqlite: /home/griffins/rust/todo-sqlite/src/add_todo.rs /home/griffins/rust/todo-sqlite/src/delete_todo.rs /home/griffins/rust/todo-sqlite/src/done_todo.rs /home/griffins/rust/todo-sqlite/src/list_todo.rs /home/griffins/rust/todo-sqlite/src/main.rs
